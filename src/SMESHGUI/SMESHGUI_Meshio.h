@@ -39,6 +39,11 @@
 
 class QStringList;
 
+namespace SMESHLibNames {
+    constexpr const char* Gmsh   = "gmsh";
+    constexpr const char* MeshIo = "meshio";
+}
+
 class SMESHGUI_EXPORT SMESHGUI_Meshio
 {
   using meshList = QList<QPair<SMESH::SMESH_IDSource_var, QString>>;

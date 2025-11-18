@@ -127,47 +127,91 @@ const QStringList& SMESHGUI_Meshio::GetImportFileFilter()
 }
 
 /*!
+  Map of libraries and supported filters (labels)
+*/
+static const std::map<std::string, std::vector<QString>> libExtensions = {
+    { SMESHLibNames::Gmsh, {
+        "Gmsh 4.1 (*.msh)"
+      }
+    },
+    { SMESHLibNames::MeshIo, {
+        "Abaqus (*.inp)",
+        "ANSYS msh (*.msh)",
+        "AVS-UCD (*.avs)",
+        "CGNS (*.cgns)",
+        "DOLFIN XML (*.xml)",
+#if !defined(WIN32)
+        "Exodus (*.e *.exo)",
+#endif
+        "FLAC3D (*.f3grid)",
+        "H5M (*.h5m)",
+        "Kratos/MDPA (*.mdpa)",
+        "MED/Salome (*.med)",
+        "Medit (*.mesh *.meshb)",
+        "Nastran (*.bdf *.fem *.nas)",
+        "Netgen (*.vol *.vol.gz)",
+        "OBJ (*.obj)",
+        "OFF (*.off)",
+        "PERMAS (*.post *.post.gz *.dato *.dato.gz)",
+        "PLY (*.ply)",
+        "STL (*.stl)",
+        "SU2 (*.su2)",
+        "SVG, 2D output only (*.svg)",
+        "Tecplot (*.dat)",
+        "TetGen (*.node *.ele)",
+        "UGRID (*.ugrid)",
+        "VTK (*.vtk)",
+        "VTU (*.vtu)",
+        "WKT, TIN (*.wkt)",
+        "XDMF (*.xdmf *.xmf)"
+      }
+    }
+};
+
+
+/*!
   Returns a filter for Export File dialog
 */
 const QStringList& SMESHGUI_Meshio::GetExportFileFilter()
 {
-  static const QStringList filter = {
-    "Abaqus (*.inp)",
-    "ANSYS msh (*.msh)",
-    "AVS-UCD (*.avs)",
-    "CGNS (*.cgns)",
-    "DOLFIN XML (*.xml)",
-#if !defined(WIN32)
-    "Exodus (*.e *.exo)",
-#endif
-    "FLAC3D (*.f3grid)",
-    "Gmsh 2.2 (*.msh)",
-    "Gmsh 4.0 (*.msh)",
-    //"Gmsh 4.1 (*.msh)",
-    "H5M (*.h5m)",
-    "Kratos/MDPA (*.mdpa)",
-    "MED/Salome (*.med)",
-    "Medit (*.mesh *.meshb)",
-    "Nastran (*.bdf *.fem *.nas)",
-    "Netgen(*.vol *.vol.gz)",
-    "OBJ (*.obj)",
-    "OFF (*.off)",
-    "PERMAS (*.post *.post.gz *.dato *.dato.gz)",
-    "PLY (*.ply)",
-    "STL (*.stl)",
-    "SU2 (*.su2)",
-    "SVG, 2D output only (*.svg)",
-    "Tecplot (*.dat)",
-    "TetGen (*.node *.ele)",
-    "UGRID (*.ugrid)",
-    "VTK (*.vtk)",
-    "VTU (*.vtu)",
-    "WKT, TIN (*.wkt)",
-    "XDMF (*.xdmf *.xmf)"
-  };
+  static QStringList filter;
+
+  if (filter.isEmpty())
+  {
+    for (const auto& [lib, labels] : libExtensions)
+    {
+      for (const auto& label : labels)
+      {
+        filter << label;
+      }
+    }
+  }
 
   return filter;
 }
+
+/*!
+  find library for extension
+*/
+static std::string GetLibraryForExtension(const QString& selectedFilter)
+{
+  const int start = selectedFilter.indexOf("(*.");
+  const int end   = selectedFilter.indexOf(")", start);
+  if (start == -1 || end == -1) return "";
+
+  QString ext = selectedFilter.mid(start + 3, end - start - 3).toLower();
+
+  for (const auto& [lib, labels] : libExtensions)
+  {
+    for (const auto& label : labels)
+    {
+      if (label.contains(ext, Qt::CaseInsensitive))
+        return lib;
+    }
+  }
+  return "";
+}
+
 
 /*!
   Export mesh through an intermediate MED file
@@ -188,19 +232,30 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
     return indexedFileName;
   };
 
-  // Trim an extension from the filter like in example: 'VTK (.vtk)' => 'VTK'
-  auto getFilterWithoutExt = [](const QString& selectedFilter) -> QString
-  {
-    // Find the start index for an extension in the filter string
-    const int index = selectedFilter.indexOf('(');
-    if (index != -1)
-    {
-      const QString filterWithoutExt = selectedFilter.left(index);
-      return filterWithoutExt.trimmed();
-    }
+  // // Trim an extension from the filter like in example: 'VTK (.vtk)' => 'VTK'
+  // auto getFilterWithoutExt = [](const QString& selectedFilter) -> QString
+  // {
+  //   // Find the start index for an extension in the filter string
+  //   const int index = selectedFilter.indexOf('(');
+  //   if (index != -1)
+  //   {
+  //     const QString filterWithoutExt = selectedFilter.left(index);
+  //     return filterWithoutExt.trimmed();
+  //   }
 
-    return selectedFilter;
-  };
+  //   return selectedFilter;
+  // };
+
+  std::string lib = GetLibraryForExtension(selectedFilter);
+  if (lib.empty())
+  {
+    SUIT_MessageBox::warning(
+      SMESHGUI::desktop(),
+      QObject::tr("SMESH_WARNING"),
+      QObject::tr("SMESH_EXPORT_UNKNOWN_LIB")
+    );
+    return;
+  }
 
   // Iterate all the meshes from a list
   auto aMeshIter = aMeshList.begin();
@@ -209,12 +264,31 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
     SMESH::SMESH_IDSource_var aMeshOrGroup = (*aMeshIter).first;
     SMESH::SMESH_Mesh_var        aMeshItem = aMeshOrGroup->GetMesh();
 
-    // Exprort this part.
-    aMeshItem->ExportPartToMESHIO(
-      aMeshOrGroup, // mesh part
-      (aMeshIndex ? indexedFileName(targetFileName, aMeshIndex) : targetFileName).toUtf8().data(),
-      getFilterWithoutExt(selectedFilter).toLatin1().data()
-    );
+
+    // // Exprort this part.
+    // aMeshItem->ExportPartToMESHIO(
+    //   aMeshOrGroup, // mesh part
+    //   (aMeshIndex ? indexedFileName(targetFileName, aMeshIndex) : targetFileName).toUtf8().data(),
+    //   getFilterWithoutExt(selectedFilter).toLatin1().data()
+    // );
+
+    QString outFile = (aMeshIndex ? indexedFileName(targetFileName, aMeshIndex) : targetFileName);
+
+    if (lib == SMESHLibNames::Gmsh)
+    {
+      // aMeshItem->ExportPartToGmsh(
+      //   aMeshOrGroup,
+      //   outFile.toUtf8().data()
+      // );
+    }
+    else if (lib == SMESHLibNames::MeshIo)
+    {
+      aMeshItem->ExportPartToMESHIO(
+        aMeshOrGroup,
+        outFile.toUtf8().data(),
+        selectedFilter.toLatin1().data()
+      );
+    }
   }
 }
 
