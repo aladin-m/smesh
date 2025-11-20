@@ -30,6 +30,16 @@
 #include "SMESH.hxx"
 
 #include <QString>
+#include <QStringList>
+
+#include <map>
+#include <vector>
+
+namespace SMESHLibNames {
+    constexpr const char* Gmsh   = "gmsh";
+    constexpr const char* MeshIo = "meshio";
+    constexpr const char* All = "all";
+}
 
 
 class SMESH_I_EXPORT SMESH_Meshio
@@ -46,6 +56,10 @@ public:
   static bool IsModernMeshioVersion();
   static bool IsMeshioInstalled();
   static bool IsModernPythonVersion();
+  static const std::map<QString, std::vector<QString>> libExtensions;
+  static QString GetLibraryForExtension(const QString& selectedFilter);
+  QString GetFilterLabel(QString filter) const;
+  
 
 private:
   void RemoveTempFile();
@@ -53,7 +67,8 @@ private:
   void RemoveErrorFile();
   std::string ReadErrorsFromFile() const;
 
-  QString GetConvertOptArgs() const;
+  QString GetConvertOptArgs(QString convertLib) const;
+  
 
 private:
   QString myTempFileName;

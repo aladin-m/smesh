@@ -71,11 +71,46 @@ SMESH_Meshio::~SMESH_Meshio()
 void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetFileName) const
 {
   // Execute meshio convert command
-  const QString convert = IsModernMeshioVersion() ? "meshio convert " : "meshio-convert ";
-  const QString optArgs = GetConvertOptArgs();
+  QString convertLib = SMESH_Meshio::GetLibraryForExtension(mySelectedFilter);
+  QString commandExecutable;
+  QString cmdConvertOpt = "";
+  QString cmdOutputOpt = "";
+  QString cmdSaveOpts = "";
 
-  const std::string cmd = 
-    (convert + optArgs + " " + sourceFileName + " " + targetFileName + " 2> " + myErrorFileName).toStdString();
+  if (convertLib == SMESHLibNames::Gmsh)
+  {
+    commandExecutable = "gmsh";
+    cmdConvertOpt = "-format";
+    cmdOutputOpt = "-o";
+    cmdSaveOpts = "-save_all -save";
+  }
+  else if (convertLib == SMESHLibNames::MeshIo)
+  {
+    commandExecutable = IsModernMeshioVersion() ? "meshio convert" : "meshio-convert";
+    cmdConvertOpt = "-o";
+  }
+  else
+  {
+    MESSAGE("Unknown library for conversion");
+    return;
+  }
+  
+  // const QString convert = IsModernMeshioVersion() ? "meshio convert " : "meshio-convert ";
+  const QString optArgs = GetConvertOptArgs(convertLib);
+
+  // Build command parts
+  QStringList cmdParts;
+  cmdParts << commandExecutable;
+  if (!cmdConvertOpt.isEmpty()) cmdParts << cmdConvertOpt << optArgs;
+  else cmdParts << optArgs;
+  cmdParts << sourceFileName;
+  if (!cmdOutputOpt.isEmpty()) cmdParts << cmdOutputOpt << targetFileName;
+  else cmdParts << targetFileName;
+  if (!cmdSaveOpts.isEmpty()) cmdParts << cmdSaveOpts;
+  cmdParts << "2>" << myErrorFileName;
+
+  const std::string cmd = cmdParts.join(" ").toStdString();
+
   MESSAGE("Call system(\"" << cmd << "\") ...");
 
   const int status = system(cmd.c_str());
@@ -353,22 +388,145 @@ std::string SMESH_Meshio::ReadErrorsFromFile() const
 }
 
 /*!
+  Returns the label part of a filter string (before '(').
+  Example: "VTK (*.vtk)" => "VTK"
+*/
+QString SMESH_Meshio::GetFilterLabel(QString filter) const
+{
+  const int index = filter.indexOf('(');
+  if (index > 0)
+    return filter.left(index).trimmed();
+
+  return filter.trimmed();
+}
+
+/*!
   Get optional arguments for meshio convert command
 */
-QString SMESH_Meshio::GetConvertOptArgs() const
+QString SMESH_Meshio::GetConvertOptArgs(QString convertLib) const
 {
   if (mySelectedFilter.isEmpty())
     return mySelectedFilter;
 
-  // Check what kind of option we must provide
-  if (mySelectedFilter.startsWith("ANSYS"))
-    return "-o ansys";
-  else if (mySelectedFilter.startsWith("Gmsh 2"))
-    return "-o gmsh22";
-  else if (mySelectedFilter.startsWith("Gmsh 4.0"))
-    return "-o gmsh40";
-  else if (mySelectedFilter.startsWith("Gmsh 4.1"))
-    return "-o gmsh";
+  const QString filterLabel = SMESH_Meshio::GetFilterLabel(mySelectedFilter);
 
+  // Mapping table: (library, filter label) -> conversion option
+  static const std::map<std::pair<QString, QString>, QString> options = {
+    // Gmsh-specific formats
+    { { SMESHLibNames::Gmsh, "Gmsh 2.2" }, "msh22" },
+    { { SMESHLibNames::Gmsh, "Gmsh 4.0" }, "msh40" },
+    { { SMESHLibNames::Gmsh, "Gmsh 4.1" }, "msh" },
+
+    // MeshIo-specific formats
+    { { SMESHLibNames::MeshIo, "Gmsh 2.2" }, "gmsh22" },
+    { { SMESHLibNames::MeshIo, "Gmsh 4.0" }, "gmsh40" },
+    { { SMESHLibNames::MeshIo, "Gmsh 4.1" }, "gmsh" },
+
+    // Generic formats (valid for all libraries)
+    { { SMESHLibNames::All, "ANSYS msh" }, "ansys" },
+    { { SMESHLibNames::All, "VTK" }, "vtk" },
+    { { SMESHLibNames::All, "STL" }, "stl" },
+    { { SMESHLibNames::All, "VTU" }, "vtu" },
+    { { SMESHLibNames::All, "OBJ" }, "obj" },
+    { { SMESHLibNames::All, "OFF" }, "off" },
+    { { SMESHLibNames::All, "PLY" }, "ply" },
+    { { SMESHLibNames::All, "XDMF" }, "xdmf" },
+  };
+
+  // First, try to find a specific match for (convertLib, filterLabel)
+  auto it = options.find({ convertLib, filterLabel });
+  if (it != options.end())
+    return it->second;
+
+  // If not found, try a generic match for (All, filterLabel)
+  it = options.find({ SMESHLibNames::All, filterLabel });
+  if (it != options.end())
+    return it->second;
+
+  // No match found, return empty
   return {};
+
 }
+
+/*!
+  find library for extension
+*/
+QString SMESH_Meshio::GetLibraryForExtension(const QString& selectedFilter)
+{
+  const int start = selectedFilter.indexOf("(*.");
+  const int end   = selectedFilter.indexOf(")", start);
+  if (start == -1 || end == -1) return "";
+
+  QString ext = selectedFilter.mid(start + 3, end - start - 3).toLower();
+
+  for (const auto& [lib, labels] : SMESH_Meshio::libExtensions)
+  {
+    for (const auto& label : labels)
+    {
+      if (label.contains(ext, Qt::CaseInsensitive))
+        return lib;
+    }
+  }
+  return "";
+}
+
+/*!
+  Map of libraries and supported filters (labels)
+*/
+const std::map<QString, std::vector<QString>> SMESH_Meshio::libExtensions = {
+    { SMESHLibNames::Gmsh, {
+        "Gmsh 1 (*.msh)",
+        "Gmsh 2 (*.msh)",
+        "Gmsh 2.2 (*.msh)",
+        "Gmsh 3 (*.msh)",
+        "Gmsh 4 (*.msh)",
+        "Gmsh 4.0 (*.msh)",
+        "Gmsh 4.1 (*.msh)",
+        "MAIL (*.mail)",
+        "Abaqus (*.inp)",
+        "CGNS (*.cgns)",
+        "MED/Salome (*.med)",
+        "Medit MESH (*.mesh)",
+        "Nastran (*.bdf)",
+        "OBJ (*.obj)",
+        "OFF (*.off)",
+        "PLY (*.ply)",
+        "STL (*.stl)",
+        "SU2 (*.su2)",
+        "Tecplot (*.dat)",
+        "VTK (*.vtk)",
+      }
+    },
+    { SMESHLibNames::MeshIo, {
+        // "Abaqus (*.inp)",
+        "ANSYS msh (*.msh)",
+        "AVS-UCD (*.avs)",
+        // "CGNS (*.cgns)",
+        "DOLFIN XML (*.xml)",
+#if !defined(WIN32)
+        "Exodus (*.e *.exo)",
+#endif
+        "FLAC3D (*.f3grid)",
+        "H5M (*.h5m)",
+        "Kratos/MDPA (*.mdpa)",
+        // "MED/Salome (*.med)",
+        "Medit MESHB (*.meshb)",
+        "Nastran (*.fem *.nas)",
+        "Netgen (*.vol *.vol.gz)",
+        // "OBJ (*.obj)",
+        // "OFF (*.off)",
+        "PERMAS (*.post *.post.gz *.dato *.dato.gz)",
+        // "PLY (*.ply)",
+        // "STL (*.stl)",
+        // "SU2 (*.su2)",
+        "SVG, 2D output only (*.svg)",
+        // "Tecplot (*.dat)",
+        "TetGen (*.node *.ele)",
+        "UGRID (*.ugrid)",
+        // "VTK (*.vtk)",
+        "VTU (*.vtu)",
+        "WKT, TIN (*.wkt)",
+        "XDMF (*.xdmf *.xmf)"
+      }
+    }
+};
