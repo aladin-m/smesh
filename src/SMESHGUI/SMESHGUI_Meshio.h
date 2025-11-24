@@ -51,7 +51,7 @@ public:
   static void ExportMesh(
     const meshList& aMeshList, const QString& targetFileName, const QString& selectedFilter);
   static SMESH::mesh_array_var ImportMesh(
-    SMESH::SMESH_Gen_ptr theComponentMesh, const QString& filename, QStringList& errors);
+    SMESH::SMESH_Gen_ptr theComponentMesh, const QString& filename, QStringList& errors, const QString& selectedFilter = "");
 
   static const QStringList& GetImportFileFilter();
   static const QStringList& GetExportFileFilter();

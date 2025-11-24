@@ -247,6 +247,7 @@ namespace
   {
     QStringList filter;
     std::string myExtension;
+    QString selectedFilter; 
 
     if ( theCommandID == SMESHOp::OpImportMED ||
          theCommandID == SMESHOp::OpPopupImportMED ) {
@@ -309,6 +310,7 @@ namespace
       filenames = SUIT_FileDlg::getOpenFileNames( SMESHGUI::desktop(),
                                                   anInitialPath,
                                                   filter,
+                                                  selectedFilter,
                                                   QObject::tr( "SMESH_IMPORT_MESH" ) );
     }
     if ( filenames.count() > 0 )
@@ -401,7 +403,7 @@ namespace
             }
           case SMESHOp::OpImportMESHIO:
             {
-              aMeshes = SMESHGUI_Meshio::ImportMesh(theComponentMesh, filename, errors);
+              aMeshes = SMESHGUI_Meshio::ImportMesh(theComponentMesh, filename, errors, selectedFilter);
               break;
             }
           case SMESHOp::OpImportMAIL:

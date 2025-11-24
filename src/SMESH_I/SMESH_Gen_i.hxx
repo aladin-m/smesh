@@ -283,7 +283,8 @@ public:
 
   //  Create a mesh and import data from any file supported by meshio library
   SMESH::mesh_array* CreateMeshesFromMESHIO(const char*             theFileName,
-                                            SMESH::DriverMED_ReadStatus& theStatus);
+                                            SMESH::DriverMED_ReadStatus& theStatus,
+                                            const char* selectedFilter = "");
 
   SMESH::mesh_array* ReloadMeshesFromMESHIO(const char* theFileName,
                                           SMESH::SMESH_Mesh_ptr        sourceMesh,

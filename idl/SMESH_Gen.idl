@@ -309,7 +309,8 @@ module SMESH
      * Create a mesh and import data from any file supported by meshio library
      */
     mesh_array CreateMeshesFromMESHIO(in string theFileName,
-                                      out SMESH::DriverMED_ReadStatus theStatus)
+                                      out SMESH::DriverMED_ReadStatus theStatus,
+                                      in string selectedFilter)
       raises (SALOME_CMOD::SALOME_Exception);
 
 

@@ -88,10 +88,10 @@ bool SMESHGUI_Meshio::CheckMeshCount(const meshList& aMeshList)
   Import mesh through an intermediate MED file
 */
 SMESH::mesh_array_var SMESHGUI_Meshio::ImportMesh(
-  SMESH::SMESH_Gen_ptr theComponentMesh, const QString& filename, QStringList& errors)
+  SMESH::SMESH_Gen_ptr theComponentMesh, const QString& filename, QStringList& errors, const QString& selectedFilter)
 {
   SMESH::DriverMED_ReadStatus res;
-  SMESH::mesh_array_var aMeshes = theComponentMesh->CreateMeshesFromMESHIO(filename.toUtf8().constData(), res);
+  SMESH::mesh_array_var aMeshes = theComponentMesh->CreateMeshesFromMESHIO(filename.toUtf8().constData(), res, selectedFilter.toUtf8().constData());
   if (res != SMESH::DRS_OK)
   {
     errors.append(QString("%1 :\n\t%2").arg(filename).arg(
@@ -132,20 +132,17 @@ const QStringList& SMESHGUI_Meshio::GetImportFileFilter()
 */
 const QStringList& SMESHGUI_Meshio::GetExportFileFilter()
 {
-  static QStringList filter;
+    static QStringList filter;
 
-  if (filter.isEmpty())
-  {
-    for (const auto& [lib, labels] : SMESH_Meshio::libExtensions)
+    if (filter.isEmpty())
     {
-      for (const auto& label : labels)
-      {
-        filter << label;
-      }
+        for (const auto& [fmt, info] : SMESHLibConverter::FormatTable)
+        {
+            filter << info.label;  // on ajoute directement le label du format
+        }
     }
-  }
 
-  return filter;
+    return filter;
 }
 
 
@@ -169,22 +166,8 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
     return indexedFileName;
   };
 
-  // // Trim an extension from the filter like in example: 'VTK (.vtk)' => 'VTK'
-  // auto getFilterWithoutExt = [](const QString& selectedFilter) -> QString
-  // {
-  //   // Find the start index for an extension in the filter string
-  //   const int index = selectedFilter.indexOf('(');
-  //   if (index != -1)
-  //   {
-  //     const QString filterWithoutExt = selectedFilter.left(index);
-  //     return filterWithoutExt.trimmed();
-  //   }
-
-  //   return selectedFilter;
-  // };
-
-  QString lib = SMESH_Meshio::GetLibraryForExtension(selectedFilter);
-  if (lib.isEmpty())
+  SMESHLibConverter::SMESHExternalConverter lib = SMESH_Meshio::GetLibraryForExtension(selectedFilter);
+  if (lib == SMESHLibConverter::SMESHExternalConverter::Unknown)
   {
     SUIT_MessageBox::warning(
       SMESHGUI::desktop(),
@@ -211,22 +194,11 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
 
     QString outFile = (aMeshIndex ? indexedFileName(targetFileName, aMeshIndex) : targetFileName);
 
-    if (lib == SMESHLibNames::Gmsh)
-    {
-      aMeshItem->ExportPartToMESHIO(
+    aMeshItem->ExportPartToMESHIO(
         aMeshOrGroup,
         outFile.toUtf8().data(),
         selectedFilter.toLatin1().data()
       );
-    }
-    else if (lib == SMESHLibNames::MeshIo)
-    {
-      aMeshItem->ExportPartToMESHIO(
-        aMeshOrGroup,
-        outFile.toUtf8().data(),
-        selectedFilter.toLatin1().data()
-      );
-    }
   }
 }
 

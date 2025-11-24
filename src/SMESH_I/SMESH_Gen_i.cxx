@@ -2172,7 +2172,8 @@ SMESH::SMESH_Mesh_ptr SMESH_Gen_i::ReloadMeshesFromGMF(const char* theFileName, 
 //================================================================================
 
 SMESH::mesh_array* SMESH_Gen_i::CreateMeshesFromMESHIO(const char* theFileName,
-                                                       SMESH::DriverMED_ReadStatus& theStatus)
+                                                       SMESH::DriverMED_ReadStatus& theStatus,
+                                                       const char* selectedFilter)
 {
   Unexpect aCatch(SALOME_SalomeException);
   checkFileReadable(theFileName);
@@ -2181,11 +2182,11 @@ SMESH::mesh_array* SMESH_Gen_i::CreateMeshesFromMESHIO(const char* theFileName,
 
   // Create an object that holds a temp file name and
   // removes the file when goes out of scope.
-  SMESH_Meshio meshio;
+  SMESH_Meshio meshio((QString) selectedFilter);
   const QString tempFileName = meshio.CreateTempFileName(theFileName);
 
   // Convert temp file into a target one with meshio command
-  meshio.Convert(theFileName, tempFileName);
+  meshio.Convert(theFileName, tempFileName, true);
 
   // We don't need a python dump from SMESH_Gen_i::CreateMeshesFromMED(), so
   // we can't use this method as is here. The followed code is an edited part of
