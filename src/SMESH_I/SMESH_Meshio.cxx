@@ -71,7 +71,7 @@ SMESH_Meshio::~SMESH_Meshio()
 void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetFileName, bool isImport) const
 {
   // Execute meshio convert command
-  SMESHLibConverter::SMESHExternalConverter convertLib = SMESH_Meshio::GetLibraryForExtension(mySelectedFilter);
+  SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetLibraryForExtension(mySelectedFilter);
   QString commandExecutable;
   QString cmdConvertOpt = "";
   QString cmdOutputOpt = "";
@@ -79,20 +79,19 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
 
   switch (convertLib)
   {
-    case SMESHLibConverter::SMESHExternalConverter::Gmsh:
+    case SMESHIOConverter::ExternalConverter::Gmsh:
       commandExecutable = "gmsh";
       cmdConvertOpt = "-format";
       cmdOutputOpt = "-o";
       cmdSaveOpts = "-save_all -save";
       break;
 
-    case SMESHLibConverter::SMESHExternalConverter::MeshIo:
+    case SMESHIOConverter::ExternalConverter::MeshIo:
       commandExecutable = IsModernMeshioVersion() ? "meshio convert" : "meshio-convert";
       cmdConvertOpt = "-o";
       break;
 
-    case SMESHLibConverter::SMESHExternalConverter::All:
-    case SMESHLibConverter::SMESHExternalConverter::Unknown:
+    case SMESHIOConverter::ExternalConverter::Unknown:
     default:
       MESSAGE("Unknown library for conversion");
       return;
@@ -405,19 +404,19 @@ QString SMESH_Meshio::GetFilterLabel(QString filter) const
 /*!
   Get optional arguments for meshio convert command
 */
-QString SMESH_Meshio::GetConvertOptArgs(SMESHLibConverter::SMESHExternalConverter convertLib) const
+QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib) const
 {
     if (mySelectedFilter.isEmpty())
         return {};
 
-    // Convertir le filtre sélectionné en enum SMESHFormat
-    SMESHLibConverter::SMESHFormat fmt = SMESHLibConverter::fromLabel(mySelectedFilter);
-    if (fmt == SMESHLibConverter::SMESHFormat::Unknown)
+    // Convertir le filtre sélectionné en enum Extension
+    SMESHIOConverter::Extension fmt = SMESHIOConverter::fromLabel(mySelectedFilter);
+    if (fmt == SMESHIOConverter::Extension::Unknown)
         return {};
 
     // Chercher les infos du format
-    auto itFmt = SMESHLibConverter::FormatTable.find(fmt);
-    if (itFmt == SMESHLibConverter::FormatTable.end())
+    auto itFmt = SMESHIOConverter::ExtensionMap.find(fmt);
+    if (itFmt == SMESHIOConverter::ExtensionMap.end())
         return {};
 
     const auto& info = itFmt->second;
@@ -427,10 +426,6 @@ QString SMESH_Meshio::GetConvertOptArgs(SMESHLibConverter::SMESHExternalConverte
     if (convIt != info.converters.end())
         return convIt->second;
 
-    // If "All" is requested, return the general extension
-    if (convertLib == SMESHLibConverter::SMESHExternalConverter::All)
-        return info.extension;
-
     return {};
 }
 
@@ -439,12 +434,12 @@ QString SMESH_Meshio::GetConvertOptArgs(SMESHLibConverter::SMESHExternalConverte
 /*!
   find library for extension
 */
-SMESHLibConverter::SMESHExternalConverter SMESH_Meshio::GetLibraryForExtension(const QString& selectedFilter)
+SMESHIOConverter::ExternalConverter SMESH_Meshio::GetLibraryForExtension(const QString& selectedFilter)
 {
     if (selectedFilter.isEmpty())
-        return SMESHLibConverter::SMESHExternalConverter::Unknown;
+        return SMESHIOConverter::ExternalConverter::Unknown;
 
-    for (const auto& [fmt, info] : SMESHLibConverter::FormatTable)
+    for (const auto& [fmt, info] : SMESHIOConverter::ExtensionMap)
     {
         // Compare against the full label
         if (info.label.compare(selectedFilter, Qt::CaseInsensitive) == 0)
@@ -455,7 +450,7 @@ SMESHLibConverter::SMESHExternalConverter SMESH_Meshio::GetLibraryForExtension(c
         }
     }
 
-    return SMESHLibConverter::SMESHExternalConverter::Unknown;
+    return SMESHIOConverter::ExternalConverter::Unknown;
 }
 
 /*!
@@ -468,7 +463,7 @@ SMESHLibConverter::SMESHExternalConverter SMESH_Meshio::GetLibraryForExtension(c
   \param lib The converter to check (Gmsh, MeshIo, All, Unknown)
   \return true if the converter is installed, false otherwise
 */
-bool SMESH_Meshio::IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter lib)
+bool SMESH_Meshio::IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib)
 {
   auto checkExecutable = [](const std::string& program) -> bool {
       std::string cmd = program + " --version > /dev/null 2>&1";
@@ -477,14 +472,10 @@ bool SMESH_Meshio::IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConvert
   };
 
   switch (lib) {
-      case SMESHLibConverter::SMESHExternalConverter::Gmsh:
-          return checkExecutable(SMESHLibConverter::toString(SMESHLibConverter::SMESHExternalConverter::Gmsh));
-      case SMESHLibConverter::SMESHExternalConverter::MeshIo:
-          return checkExecutable(SMESHLibConverter::toString(SMESHLibConverter::SMESHExternalConverter::MeshIo));
-      case SMESHLibConverter::SMESHExternalConverter::All:
-          return IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter::Gmsh) &&
-                  IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter::MeshIo);
-      case SMESHLibConverter::SMESHExternalConverter::Unknown:
+      case SMESHIOConverter::ExternalConverter::Gmsh:
+          return checkExecutable(SMESHIOConverter::toString(SMESHIOConverter::ExternalConverter::Gmsh));
+      case SMESHIOConverter::ExternalConverter::MeshIo:
+          return checkExecutable(SMESHIOConverter::toString(SMESHIOConverter::ExternalConverter::MeshIo));
       default:
           return false;
   }

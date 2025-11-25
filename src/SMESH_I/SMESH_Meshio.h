@@ -36,30 +36,26 @@
 #include <vector>
 #include <cstring>
 
-namespace SMESHLibConverter {
+namespace SMESHIOConverter {
 
     // Enum representing supported external converters
-    enum class SMESHExternalConverter {
+    enum class ExternalConverter {
         Gmsh,
         MeshIo,
-        All,
         Unknown
     };
 
     // Convert enum -> String
-    inline std::string toString(SMESHExternalConverter conv) noexcept {
+    inline std::string toString(ExternalConverter conv) noexcept {
         switch (conv) {
-            case SMESHExternalConverter::Gmsh:    return "gmshh";
-            case SMESHExternalConverter::MeshIo:  return "meshio";
-            case SMESHExternalConverter::All:     return "all";
-            case SMESHExternalConverter::Unknown: return "unknown";
+            case ExternalConverter::Gmsh:    return "gmsh";
+            case ExternalConverter::MeshIo:  return "meshio";
         }
         return "unknown"; 
     }
 
     // Enum representing supported mesh formats
-    enum class SMESHFormat {
-        Unknown,
+    enum class Extension {
         Gmsh1,
         Gmsh2,
         Gmsh22,
@@ -96,87 +92,88 @@ namespace SMESHLibConverter {
         Ugrid,
         Vtu,
         Wkt,
-        Xdmf
+        Xdmf,
+        Unknown,
     };
 
     // Structure storing metadata for each format
-    struct FormatInfo {
+    struct ExtensionInfo {
         QString label;                 // Human-readable label (e.g. "Gmsh 2.2 (*.msh)")
         QString extension;             // Primary extension or conversion option (e.g. "msh41")
-        std::map<SMESHExternalConverter, QString> converters; // Map of converter -> option string (e.g. {{Gmsh,"msh"}, {MeshIo,"msh"}})
+        std::map<ExternalConverter, QString> converters; // Map of converter -> option string (e.g. {{Gmsh,"msh"}, {MeshIo,"msh"}})
     };
 
      /*!
-        Mapping table between each mesh format (SMESHFormat) and its metadata.
+        Mapping table between each mesh format (Extension) and its metadata.
         
         Each entry associates:
-          - SMESHFormat (key)
-          - FormatInfo containing:
+          - Extension (key)
+          - ExtensionInfo containing:
               • label: human-readable string for Qt dialogs (e.g. "Gmsh 2.2 (*.msh)")
               • extension: primary extension or identifier for the format (e.g. "msh", "vtk")
               • converters: a map of external converters and their specific option strings
-                (e.g. {{SMESHExternalConverter::Gmsh, "msh22"}, {SMESHExternalConverter::MeshIo, "gmsh22"}})
+                (e.g. {{ExternalConverter::Gmsh, "msh22"}, {ExternalConverter::MeshIo, "gmsh22"}})
     */
-    static const std::map<SMESHFormat, FormatInfo> FormatTable = {
+    static const std::map<Extension, ExtensionInfo> ExtensionMap = {
         // Gmsh-specific formats
-        { SMESHFormat::Gmsh1,     { "Gmsh 1 (*.msh)",               "msh",          { {SMESHExternalConverter::Gmsh, "msh1"}, {SMESHExternalConverter::MeshIo, "gmsh1"} } } },
-        { SMESHFormat::Gmsh2,     { "Gmsh 2 (*.msh)",               "msh",          { {SMESHExternalConverter::Gmsh, "msh2"}, {SMESHExternalConverter::MeshIo, "gmsh22"} } } },
-        { SMESHFormat::Gmsh22,    { "Gmsh 2.2 (*.msh)",             "msh",          { {SMESHExternalConverter::Gmsh, "msh22"} } } },
-        { SMESHFormat::Gmsh3,     { "Gmsh 3 (*.msh)",               "msh",          { {SMESHExternalConverter::Gmsh, "msh3"} } } },
-        { SMESHFormat::Gmsh4,     { "Gmsh 4 (*.msh)",               "msh",          { {SMESHExternalConverter::Gmsh, "msh4"} } } },
-        { SMESHFormat::Gmsh40,    { "Gmsh 4.0 (*.msh)",             "msh",          { {SMESHExternalConverter::Gmsh, "msh40"}, {SMESHExternalConverter::MeshIo, "gmsh40"} } } },
-        { SMESHFormat::Gmsh41,    { "Gmsh 4.1 (*.msh)",             "msh",          { {SMESHExternalConverter::Gmsh, "msh41"}, {SMESHExternalConverter::MeshIo, "gmsh"} } } },
+        { Extension::Gmsh1,     { "Gmsh 1 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh1"}, {ExternalConverter::MeshIo, "gmsh1"} } } },
+        { Extension::Gmsh2,     { "Gmsh 2 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh2"}, {ExternalConverter::MeshIo, "gmsh22"} } } },
+        { Extension::Gmsh22,    { "Gmsh 2.2 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh22"} } } },
+        { Extension::Gmsh3,     { "Gmsh 3 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh3"} } } },
+        { Extension::Gmsh4,     { "Gmsh 4 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh4"} } } },
+        { Extension::Gmsh40,    { "Gmsh 4.0 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh40"}, {ExternalConverter::MeshIo, "gmsh40"} } } },
+        { Extension::Gmsh41,    { "Gmsh 4.1 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh41"}, {ExternalConverter::MeshIo, "gmsh"} } } },
 
-        { SMESHFormat::Mail,      { "MAIL (*.mail)",                "mail",         { {SMESHExternalConverter::Gmsh, "mail"} } } },
-        { SMESHFormat::Abaqus,    { "Abaqus (*.inp)",               "inp",          { {SMESHExternalConverter::Gmsh, "inp"} } } },
-        { SMESHFormat::Cgns,      { "CGNS (*.cgns)",                "cgns",         { {SMESHExternalConverter::Gmsh, "cgns"} } } },
-        { SMESHFormat::Med,       { "MED/Salome (*.med)",           "med",          { {SMESHExternalConverter::Gmsh, "med"} } } },
-        { SMESHFormat::MeditMesh, { "Medit MESH (*.mesh)",          "mesh",         { {SMESHExternalConverter::Gmsh, "mesh"} } } },
-        { SMESHFormat::NastranBdf,{ "Nastran (*.bdf)",              "bdf",          { {SMESHExternalConverter::Gmsh, "bdf"} } } },
-        { SMESHFormat::Obj,       { "OBJ (*.obj)",                  "obj",          { {SMESHExternalConverter::Gmsh, "obj"} } } },
-        { SMESHFormat::Off,       { "OFF (*.off)",                  "off",          { {SMESHExternalConverter::Gmsh, "off"} } } },
-        { SMESHFormat::Ply,       { "PLY (*.ply)",                  "ply",          { {SMESHExternalConverter::Gmsh, "ply"} } } },
-        { SMESHFormat::Stl,       { "STL (*.stl)",                  "stl",          { {SMESHExternalConverter::Gmsh, "stl"} } } },
-        { SMESHFormat::Su2,       { "SU2 (*.su2)",                  "su2",          { {SMESHExternalConverter::Gmsh, "su2"} } } },
-        { SMESHFormat::Tecplot,   { "Tecplot (*.dat)",              "dat",          { {SMESHExternalConverter::Gmsh, "dat"} } } },
-        { SMESHFormat::Vtk,       { "VTK (*.vtk)",                  "vtk",          { {SMESHExternalConverter::Gmsh, "vtk"} } } },
+        { Extension::Mail,      { "MAIL (*.mail)",                "mail",         { {ExternalConverter::Gmsh, "mail"} } } },
+        { Extension::Abaqus,    { "Abaqus (*.inp)",               "inp",          { {ExternalConverter::Gmsh, "inp"} } } },
+        { Extension::Cgns,      { "CGNS (*.cgns)",                "cgns",         { {ExternalConverter::Gmsh, "cgns"} } } },
+        { Extension::Med,       { "MED/Salome (*.med)",           "med",          { {ExternalConverter::Gmsh, "med"} } } },
+        { Extension::MeditMesh, { "Medit MESH (*.mesh)",          "mesh",         { {ExternalConverter::Gmsh, "mesh"} } } },
+        { Extension::NastranBdf,{ "Nastran (*.bdf)",              "bdf",          { {ExternalConverter::Gmsh, "bdf"} } } },
+        { Extension::Obj,       { "OBJ (*.obj)",                  "obj",          { {ExternalConverter::Gmsh, "obj"} } } },
+        { Extension::Off,       { "OFF (*.off)",                  "off",          { {ExternalConverter::Gmsh, "off"} } } },
+        { Extension::Ply,       { "PLY (*.ply)",                  "ply",          { {ExternalConverter::Gmsh, "ply"} } } },
+        { Extension::Stl,       { "STL (*.stl)",                  "stl",          { {ExternalConverter::Gmsh, "stl"} } } },
+        { Extension::Su2,       { "SU2 (*.su2)",                  "su2",          { {ExternalConverter::Gmsh, "su2"} } } },
+        { Extension::Tecplot,   { "Tecplot (*.dat)",              "dat",          { {ExternalConverter::Gmsh, "dat"} } } },
+        { Extension::Vtk,       { "VTK (*.vtk)",                  "vtk",          { {ExternalConverter::Gmsh, "vtk"} } } },
 
         // MeshIo-specific formats
-        { SMESHFormat::Ansys,     { "ANSYS msh (*.msh)",            "ansys",        { {SMESHExternalConverter::MeshIo, "ansys"} } } },
-        { SMESHFormat::AvsUcd,    { "AVS-UCD (*.avs)",              "avs",          { {SMESHExternalConverter::MeshIo, "avs"} } } },
-        { SMESHFormat::DolfinXml, { "DOLFIN XML (*.xml)",           "xml",          { {SMESHExternalConverter::MeshIo, "xml"} } } },
-        { SMESHFormat::Exodus,    { "Exodus (*.e *.exo)",           "exo",          { {SMESHExternalConverter::MeshIo, "exo"} } } },
-        { SMESHFormat::Flac3d,    { "FLAC3D (*.f3grid)",            "f3grid",       { {SMESHExternalConverter::MeshIo, "f3grid"} } } },
-        { SMESHFormat::H5m,       { "H5M (*.h5m)",                  "h5m",          { {SMESHExternalConverter::MeshIo, "h5m"} } } },
-        { SMESHFormat::Kratos,    { "Kratos/MDPA (*.mdpa)",         "mdpa",         { {SMESHExternalConverter::MeshIo, "mdpa"} } } },
-        { SMESHFormat::MeditMeshb,{ "Medit MESHB (*.meshb)",        "meshb",        { {SMESHExternalConverter::MeshIo, "meshb"} } } },
-        { SMESHFormat::NastranFem,{ "Nastran (*.fem *.nas)",        "nas",          { {SMESHExternalConverter::MeshIo, "nas"} } } },
-        { SMESHFormat::Netgen,    { "Netgen (*.vol *.vol.gz)",      "vol",          { {SMESHExternalConverter::MeshIo, "vol"} } } },
-        { SMESHFormat::Permas,    { "PERMAS (*.post *.dato)",       "post",         { {SMESHExternalConverter::MeshIo, "post"} } } },
-        { SMESHFormat::Svg,       { "SVG, 2D output only (*.svg)",  "svg",          { {SMESHExternalConverter::MeshIo, "svg"} } } },
-        { SMESHFormat::Tetgen,    { "TetGen (*.node *.ele)",        "node",         { {SMESHExternalConverter::MeshIo, "node"} } } },
-        { SMESHFormat::Ugrid,     { "UGRID (*.ugrid)",              "ugrid",        { {SMESHExternalConverter::MeshIo, "ugrid"} } } },
-        { SMESHFormat::Vtu,       { "VTU (*.vtu)",                  "vtu",          { {SMESHExternalConverter::MeshIo, "vtu"} } } },
-        { SMESHFormat::Wkt,       { "WKT, TIN (*.wkt)",             "wkt",          { {SMESHExternalConverter::MeshIo, "wkt"} } } },
-        { SMESHFormat::Xdmf,      { "XDMF (*.xdmf *.xmf)",          "xdmf",         { {SMESHExternalConverter::MeshIo, "xdmf"} } } }
+        { Extension::Ansys,     { "ANSYS msh (*.msh)",            "ansys",        { {ExternalConverter::MeshIo, "ansys"} } } },
+        { Extension::AvsUcd,    { "AVS-UCD (*.avs)",              "avs",          { {ExternalConverter::MeshIo, "avs"} } } },
+        { Extension::DolfinXml, { "DOLFIN XML (*.xml)",           "xml",          { {ExternalConverter::MeshIo, "xml"} } } },
+        { Extension::Exodus,    { "Exodus (*.e *.exo)",           "exo",          { {ExternalConverter::MeshIo, "exo"} } } },
+        { Extension::Flac3d,    { "FLAC3D (*.f3grid)",            "f3grid",       { {ExternalConverter::MeshIo, "f3grid"} } } },
+        { Extension::H5m,       { "H5M (*.h5m)",                  "h5m",          { {ExternalConverter::MeshIo, "h5m"} } } },
+        { Extension::Kratos,    { "Kratos/MDPA (*.mdpa)",         "mdpa",         { {ExternalConverter::MeshIo, "mdpa"} } } },
+        { Extension::MeditMeshb,{ "Medit MESHB (*.meshb)",        "meshb",        { {ExternalConverter::MeshIo, "meshb"} } } },
+        { Extension::NastranFem,{ "Nastran (*.fem *.nas)",        "nas",          { {ExternalConverter::MeshIo, "nas"} } } },
+        { Extension::Netgen,    { "Netgen (*.vol *.vol.gz)",      "vol",          { {ExternalConverter::MeshIo, "vol"} } } },
+        { Extension::Permas,    { "PERMAS (*.post *.dato)",       "post",         { {ExternalConverter::MeshIo, "post"} } } },
+        { Extension::Svg,       { "SVG, 2D output only (*.svg)",  "svg",          { {ExternalConverter::MeshIo, "svg"} } } },
+        { Extension::Tetgen,    { "TetGen (*.node *.ele)",        "node",         { {ExternalConverter::MeshIo, "node"} } } },
+        { Extension::Ugrid,     { "UGRID (*.ugrid)",              "ugrid",        { {ExternalConverter::MeshIo, "ugrid"} } } },
+        { Extension::Vtu,       { "VTU (*.vtu)",                  "vtu",          { {ExternalConverter::MeshIo, "vtu"} } } },
+        { Extension::Wkt,       { "WKT, TIN (*.wkt)",             "wkt",          { {ExternalConverter::MeshIo, "wkt"} } } },
+        { Extension::Xdmf,      { "XDMF (*.xdmf *.xmf)",          "xdmf",         { {ExternalConverter::MeshIo, "xdmf"} } } }
     };
 
     // Convert enum -> label
-    inline QString toLabel(SMESHFormat fmt) {
-        auto it = FormatTable.find(fmt);
-        return (it != FormatTable.end()) ? it->second.label : "Unknown";
+    inline QString toLabel(Extension fmt) {
+        auto it = ExtensionMap.find(fmt);
+        return (it != ExtensionMap.end()) ? it->second.label : "Unknown";
     }
 
     // Convert enum -> extension
-    inline QString toExtension(SMESHFormat fmt) {
-        auto it = FormatTable.find(fmt);
-        return (it != FormatTable.end()) ? it->second.extension : "";
+    inline QString toExtension(Extension fmt) {
+        auto it = ExtensionMap.find(fmt);
+        return (it != ExtensionMap.end()) ? it->second.extension : "";
     }
 
     // Get the converter-specific option string for a format
-    inline QString toOption(SMESHFormat fmt, SMESHExternalConverter conv) {
-        auto it = FormatTable.find(fmt);
-        if (it != FormatTable.end()) {
+    inline QString toOption(Extension fmt, ExternalConverter conv) {
+        auto it = ExtensionMap.find(fmt);
+        if (it != ExtensionMap.end()) {
             auto convIt = it->second.converters.find(conv);
             if (convIt != it->second.converters.end())
                 return convIt->second;
@@ -185,35 +182,35 @@ namespace SMESHLibConverter {
     }
 
     // Convert label -> enum
-    inline SMESHFormat fromLabel(const QString& label) {
-        for (const auto& [fmt, info] : FormatTable) {
+    inline Extension fromLabel(const QString& label) {
+        for (const auto& [fmt, info] : ExtensionMap) {
             if (info.label.compare(label, Qt::CaseInsensitive) == 0)
                 return fmt;
         }
-        return SMESHFormat::Unknown;
+        return Extension::Unknown;
     }
 
     // Convert extension -> enum
-    inline SMESHFormat fromExtension(const QString& ext) {
-        for (const auto& [fmt, info] : FormatTable) {
+    inline Extension fromExtension(const QString& ext) {
+        for (const auto& [fmt, info] : ExtensionMap) {
             if (info.extension.compare(ext, Qt::CaseInsensitive) == 0)
                 return fmt;
         }
-        return SMESHFormat::Unknown;
+        return Extension::Unknown;
     }
 
     // Convert option string -> enum (converter-specific)
-    inline SMESHFormat fromOption(const QString& opt, SMESHExternalConverter conv) {
-        for (const auto& [fmt, info] : FormatTable) {
+    inline Extension fromOption(const QString& opt, ExternalConverter conv) {
+        for (const auto& [fmt, info] : ExtensionMap) {
             auto convIt = info.converters.find(conv);
             if (convIt != info.converters.end() &&
                 convIt->second.compare(opt, Qt::CaseInsensitive) == 0)
                 return fmt;
         }
-        return SMESHFormat::Unknown;
+        return Extension::Unknown;
     }
 
-} // namespace SMESHLibConverter
+} // namespace SMESHIOConverter
 
 class SMESH_I_EXPORT SMESH_Meshio
 {
@@ -229,8 +226,8 @@ public:
   static bool IsModernMeshioVersion();
   static bool IsMeshioInstalled();
   static bool IsModernPythonVersion();
-  static bool IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter lib = SMESHLibConverter::SMESHExternalConverter::Gmsh);
-  static SMESHLibConverter::SMESHExternalConverter GetLibraryForExtension(const QString& selectedFilter);
+  static bool IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib = SMESHIOConverter::ExternalConverter::Gmsh);
+  static SMESHIOConverter::ExternalConverter GetLibraryForExtension(const QString& selectedFilter);
   QString GetFilterLabel(QString filter) const;
   
 
@@ -240,7 +237,7 @@ private:
   void RemoveErrorFile();
   std::string ReadErrorsFromFile() const;
 
-  QString GetConvertOptArgs(SMESHLibConverter::SMESHExternalConverter convertLib) const;
+  QString GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib) const;
   
 
 private:

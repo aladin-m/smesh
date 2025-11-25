@@ -135,7 +135,7 @@ const QStringList& SMESHGUI_Meshio::GetExportFileFilter()
 
     if (filter.isEmpty())
     {
-        for (const auto& [fmt, info] : SMESHLibConverter::FormatTable)
+        for (const auto& [fmt, info] : SMESHIOConverter::ExtensionMap)
         {
             filter << info.label;  // on ajoute directement le label du format
         }
@@ -155,12 +155,12 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
   // We need to save into separated files because meshio doesn't
   // support reading more than one mesh from a MED file.
   // Look at src/meshio/med/_med.py in meshio git repo for a reference.
-  SMESHLibConverter::SMESHExternalConverter lib = SMESH_Meshio::GetLibraryForExtension(selectedFilter);
+  SMESHIOConverter::ExternalConverter lib = SMESH_Meshio::GetLibraryForExtension(selectedFilter);
   if (!SMESHGUI_Meshio::IsConvertLibInstalled(lib))
   {
     return;
   }
-  if (lib == SMESHLibConverter::SMESHExternalConverter::Unknown)
+  if (lib == SMESHIOConverter::ExternalConverter::Unknown)
   {
     SUIT_MessageBox::warning(
       SMESHGUI::desktop(),
@@ -247,7 +247,7 @@ bool SMESHGUI_Meshio::IsMeshioInstalled()
 /*!
   Returns true if convert package is installed
 */
-bool SMESHGUI_Meshio::IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter lib)
+bool SMESHGUI_Meshio::IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib)
 {
   const bool isInstalled = SMESH_Meshio::IsConvertLibInstalled(lib);
   if (!isInstalled)
