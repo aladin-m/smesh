@@ -276,8 +276,8 @@ namespace
       filter.append( QObject::tr( "GMF_BINARY_FILES_FILTER") + " (*.meshb)" );
     }
     else if (theCommandID == SMESHOp::OpImportMESHIO) {
-      if (!SMESHGUI_Meshio::IsMeshioInstalled())
-        return;
+      // if (!SMESHGUI_Meshio::IsMeshioInstalled())
+      //   return;
 
       filter = SMESHGUI_Meshio::GetImportFileFilter();
     }
@@ -403,6 +403,8 @@ namespace
             }
           case SMESHOp::OpImportMESHIO:
             {
+              if (!SMESHGUI_Meshio::IsConvertLibInstalled(SMESH_Meshio::GetLibraryForExtension(selectedFilter)))
+                return;
               aMeshes = SMESHGUI_Meshio::ImportMesh(theComponentMesh, filename, errors, selectedFilter);
               break;
             }
@@ -495,10 +497,10 @@ namespace
                          theCommandID == SMESHOp::OpPopupExportGMF );
     const bool isMESHIO = (theCommandID == SMESHOp::OpExportMESHIO);
 
-    if (isMESHIO && !SMESHGUI_Meshio::IsMeshioInstalled())
-    {
-      return;
-    }
+    // if (isMESHIO && !SMESHGUI_Meshio::IsMeshioInstalled())
+    // {
+    //   return;
+    // }
 
     const bool multiMeshSupported = isMED || isCGNS || isMESHIO; // file can hold several meshes
     if ( selected.Extent() == 0 || ( selected.Extent() > 1 && !multiMeshSupported ))

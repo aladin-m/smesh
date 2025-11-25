@@ -29,6 +29,8 @@
 
 #include "SMESH_SMESHGUI.hxx"
 
+#include "SMESH_Meshio.h"
+
 #include <QList>
 #include <QPair>
 
@@ -60,6 +62,7 @@ public:
   static bool CheckMeshCount(const meshList& aMeshList);
 
   static bool IsMeshioInstalled();
+  static bool IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter lib = SMESHLibConverter::SMESHExternalConverter::Gmsh);
 };
 
 #endif // SMESHGUI_MESHIO_H

@@ -2053,6 +2053,18 @@ Try to install meshio with a command:
 pip install meshio[all]</translation>
     </message>
     <message>
+        <source>SMESH_CONVERT_LIB_NOT_INSTALLED</source>
+        <translation>Convert Lib is not installed!
+Operation will be canceled.
+        </translation>
+    </message>
+    <message>
+        <source>SMESH_EXPORT_UNKNOWN_LIB</source>
+        <translation>Unknown export library!
+Operation will be canceled.
+        </translation>
+    </message>
+    <message>
         <source>EXPORT_NOT_SUPPORTED</source>
         <translation>During export mesh with name &quot;%1&quot; to %2
 %3 will be missed.

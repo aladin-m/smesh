@@ -25,7 +25,6 @@
 // Author : Konstantin Leontev, Open CASCADE S.A.S.
 //
 #include "SMESHGUI_Meshio.h"
-#include "SMESH_Meshio.h"
 
 // SMESH includes
 #include "SMESHGUI.h"
@@ -156,17 +155,11 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
   // We need to save into separated files because meshio doesn't
   // support reading more than one mesh from a MED file.
   // Look at src/meshio/med/_med.py in meshio git repo for a reference.
-  auto indexedFileName = [](const QString& targetFileName, const int index) -> QString
-  {
-    QString indexedFileName = targetFileName;
-
-    const int lastIndex = indexedFileName.lastIndexOf(".");
-    indexedFileName.insert(lastIndex, "_" + QString::number(index));
-
-    return indexedFileName;
-  };
-
   SMESHLibConverter::SMESHExternalConverter lib = SMESH_Meshio::GetLibraryForExtension(selectedFilter);
+  if (!SMESHGUI_Meshio::IsConvertLibInstalled(lib))
+  {
+    return;
+  }
   if (lib == SMESHLibConverter::SMESHExternalConverter::Unknown)
   {
     SUIT_MessageBox::warning(
@@ -176,6 +169,16 @@ void SMESHGUI_Meshio::ExportMesh(const meshList& aMeshList, const QString& targe
     );
     return;
   }
+
+  auto indexedFileName = [](const QString& targetFileName, const int index) -> QString
+  {
+    QString indexedFileName = targetFileName;
+
+    const int lastIndex = indexedFileName.lastIndexOf(".");
+    indexedFileName.insert(lastIndex, "_" + QString::number(index));
+
+    return indexedFileName;
+  };
 
   // Iterate all the meshes from a list
   auto aMeshIter = aMeshList.begin();
@@ -235,6 +238,24 @@ bool SMESHGUI_Meshio::IsMeshioInstalled()
       SMESHGUI::desktop(),
       QObject::tr("SMESH_WARNING"),
       QObject::tr("SMESH_MESHIO_NOT_INSTALLED")
+    );
+  }
+
+  return isInstalled;
+}
+
+/*!
+  Returns true if convert package is installed
+*/
+bool SMESHGUI_Meshio::IsConvertLibInstalled(SMESHLibConverter::SMESHExternalConverter lib)
+{
+  const bool isInstalled = SMESH_Meshio::IsConvertLibInstalled(lib);
+  if (!isInstalled)
+  {
+    SUIT_MessageBox::warning(
+      SMESHGUI::desktop(),
+      QObject::tr("SMESH_WARNING"),
+      QObject::tr("SMESH_CONVERT_LIB_NOT_INSTALLED")
     );
   }
 
