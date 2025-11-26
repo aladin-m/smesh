@@ -69,26 +69,35 @@ SMESH_Meshio::~SMESH_Meshio()
   Convert file with meshio convert command
 */
 void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetFileName, bool isImport) const
-{
+{ 
+  auto appendIfNotEmpty = [&](QStringList &parts, const QString &opt, const QString &val) {
+      if (!opt.isEmpty() && !val.isEmpty())
+          parts << opt << val;
+  };
   // Execute meshio convert command
   SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetLibraryForExtension(mySelectedFilter);
-  QString commandExecutable;
+  QString cmdExecutable;
   QString cmdConvertOpt = "";
-  QString cmdOutputOpt = "";
-  QString cmdSaveOpts = "";
+  QString cmdInputOpt   = "";
+  QString cmdOutputOpt  = "";     // for output format
+  QString cmdOutputFileOpt = "";  // for output file name
+  QString cmdSaveOpts   = "";
+  QString inputFmt  = "";
+  QString outputFmt = "";
 
   switch (convertLib)
   {
     case SMESHIOConverter::ExternalConverter::Gmsh:
-      commandExecutable = "gmsh";
-      cmdConvertOpt = "-format";
-      cmdOutputOpt = "-o";
+      cmdExecutable = "gmsh";
+      cmdOutputOpt = "-format";
+      cmdOutputFileOpt  = "-o";
       cmdSaveOpts = "-save_all -save";
       break;
 
     case SMESHIOConverter::ExternalConverter::MeshIo:
-      commandExecutable = IsModernMeshioVersion() ? "meshio convert" : "meshio-convert";
-      cmdConvertOpt = "-o";
+      cmdExecutable = IsModernMeshioVersion() ? "meshio convert" : "meshio-convert";
+      cmdInputOpt = "--input-format";
+      cmdOutputOpt = "--output-format";
       break;
 
     case SMESHIOConverter::ExternalConverter::Unknown:
@@ -97,17 +106,45 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
       return;
   }
 
-  QString optArgs = isImport ? "med" : GetConvertOptArgs(convertLib);
+  // Decide input/output formats based on import/export
+  if (isImport) {
+      // Import case → output format is always "med"
+      inputFmt = GetConvertOptArgs(convertLib); // detect actual input format
+      outputFmt = "med";
+  } else {
+      // Export case → input format is always "med"
+      inputFmt = "med";
+      outputFmt = GetConvertOptArgs(convertLib); // detect actual output format
+  }
 
   // Build command parts
   QStringList cmdParts;
-  cmdParts << commandExecutable;
-  if (!cmdConvertOpt.isEmpty()) cmdParts << cmdConvertOpt << optArgs;
-  else cmdParts << optArgs;
+  cmdParts << cmdExecutable;
+
+  // Add convert option right after executable (if any)
+  if (!cmdConvertOpt.isEmpty())
+      cmdParts << cmdConvertOpt;
+
+  // Input option + format
+  appendIfNotEmpty(cmdParts, cmdInputOpt, inputFmt);
+
+  // Source file
   cmdParts << sourceFileName;
-  if (!cmdOutputOpt.isEmpty()) cmdParts << cmdOutputOpt << targetFileName;
-  else cmdParts << targetFileName;
-  if (!cmdSaveOpts.isEmpty()) cmdParts << cmdSaveOpts;
+
+  // Output option + format
+  appendIfNotEmpty(cmdParts, cmdOutputOpt, outputFmt);
+
+  // Output file option + target file
+  if (!cmdOutputFileOpt.isEmpty())
+      cmdParts << cmdOutputFileOpt << targetFileName;
+  else
+      cmdParts << targetFileName;
+
+  // Save options (gmsh only)
+  if (!cmdSaveOpts.isEmpty())
+      cmdParts << cmdSaveOpts;
+
+  // Redirect errors
   cmdParts << "2>" << myErrorFileName;
 
   const std::string cmd = cmdParts.join(" ").toStdString();

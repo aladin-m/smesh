@@ -98,7 +98,7 @@ namespace SMESHIOConverter {
 
     // Structure storing metadata for each format
     struct ExtensionInfo {
-        QString label;                 // Human-readable label (e.g. "Gmsh 2.2 (*.msh)")
+        QString label;                 // label (e.g. "Gmsh 2.2 (*.msh)")
         QString extension;             // Primary extension or conversion option (e.g. "msh41")
         std::map<ExternalConverter, QString> converters; // Map of converter -> option string (e.g. {{Gmsh,"msh"}, {MeshIo,"msh"}})
     };
@@ -109,7 +109,7 @@ namespace SMESHIOConverter {
         Each entry associates:
           - Extension (key)
           - ExtensionInfo containing:
-              • label: human-readable string for Qt dialogs (e.g. "Gmsh 2.2 (*.msh)")
+              • label: string for Qt dialogs (e.g. "Gmsh 2.2 (*.msh)")
               • extension: primary extension or identifier for the format (e.g. "msh", "vtk")
               • converters: a map of external converters and their specific option strings
                 (e.g. {{ExternalConverter::Gmsh, "msh22"}, {ExternalConverter::MeshIo, "gmsh22"}})
