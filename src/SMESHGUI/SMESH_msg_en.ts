@@ -2054,7 +2054,7 @@ pip install meshio[all]</translation>
     </message>
     <message>
         <source>SMESH_CONVERT_LIB_NOT_INSTALLED</source>
-        <translation>Convert Lib is not installed!
+        <translation>Converter is not installed!
 Operation will be canceled.
         </translation>
     </message>

@@ -62,7 +62,7 @@ public:
   static bool CheckMeshCount(const meshList& aMeshList);
 
   static bool IsMeshioInstalled();
-  static bool IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib = SMESHIOConverter::ExternalConverter::Gmsh);
+  static bool IsConverterInstalled(SMESHIOConverter::ExternalConverter converter = SMESHIOConverter::ExternalConverter::Gmsh);
 };
 
 #endif // SMESHGUI_MESHIO_H

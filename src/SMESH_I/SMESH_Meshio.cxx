@@ -75,7 +75,7 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
           parts << opt << val;
   };
   // Execute meshio convert command
-  SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetLibraryForExtension(mySelectedFilter);
+  SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetConverterForExtension(mySelectedFilter);
   QString cmdExecutable;
   QString cmdConvertOpt = "";
   QString cmdInputOpt   = "";
@@ -471,7 +471,7 @@ QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter conv
 /*!
   find library for extension
 */
-SMESHIOConverter::ExternalConverter SMESH_Meshio::GetLibraryForExtension(const QString& selectedFilter)
+SMESHIOConverter::ExternalConverter SMESH_Meshio::GetConverterForExtension(const QString& selectedFilter)
 {
     if (selectedFilter.isEmpty())
         return SMESHIOConverter::ExternalConverter::Unknown;
@@ -491,30 +491,131 @@ SMESHIOConverter::ExternalConverter SMESH_Meshio::GetLibraryForExtension(const Q
 }
 
 /*!
-  Check if a given converter library is installed (available in PATH).
+  Check if a given converter library is installed and allowed for use.
   
-  This function attempts to start the corresponding executable with "--version"
-  to verify its availability. If the process starts and exits normally,
-  the converter is considered installed.
-  
-  \param lib The converter to check (Gmsh, MeshIo, All, Unknown)
-  \return true if the converter is installed, false otherwise
+  This function performs two verifications:
+   1. Environment check:
+      - Reads the corresponding environment variable (e.g. GMSH_VERSION, MESHIO_VERSION).
+      - If the variable is set to 0 or invalid, the converter is considered disabled.
+   2. Executable check:
+      - Attempts to start the corresponding executable with "--version" (or "meshio-info --version" for legacy MeshIo).
+      - If the process starts and exits normally, the converter is considered available in PATH.
+
+  A converter is considered installed only if both checks succeed.
+
+  \param converter The converter to check (Gmsh, MeshIo).
+  \return true if the converter is allowed by environment and its executable is available, false otherwise.
 */
-bool SMESH_Meshio::IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib)
+bool SMESH_Meshio::IsConverterInstalled(SMESHIOConverter::ExternalConverter converter)
 {
-  auto checkExecutable = [](const std::string& program) -> bool {
-      std::string cmd = program + " --version > /dev/null 2>&1";
-      int ret = std::system(cmd.c_str());
-      return (ret == 0);
+  auto IsAllowedFromEnvironment = [&](SMESHIOConverter::ExternalConverter conv) -> bool
+  {
+    const QString curVersion = GetConverterVersion(conv);
+
+    // Check if we explicitly set off using of converter from environment
+    const QStringList curVersionNums = curVersion.split('.');
+    bool ok = false;
+    int firstNum = curVersionNums[0].toInt(&ok);
+    if (!ok || firstNum <= 0)
+    {
+      MESSAGE(SMESHIOConverter::toString(conv) << " was set as not installed from environment");
+      return false;
+    }
+
+    return true;
   };
 
-  switch (lib) {
-      case SMESHIOConverter::ExternalConverter::Gmsh:
-          return checkExecutable(SMESHIOConverter::toString(SMESHIOConverter::ExternalConverter::Gmsh));
-      case SMESHIOConverter::ExternalConverter::MeshIo:
-          return checkExecutable(SMESHIOConverter::toString(SMESHIOConverter::ExternalConverter::MeshIo));
-      default:
-          return false;
+  auto checkExecutable = [](const std::string& program) -> bool {
+    std::string cmd = program + " --version > /dev/null 2>&1";
+    int ret = std::system(cmd.c_str());
+    MESSAGE("status: " << ret);
+    return (ret == 0);
+  };
+
+  // Decide executable name depending on converter
+  std::string program = SMESHIOConverter::toString(converter);
+
+  // Special case: meshio old versions use meshio-info
+  if (converter == SMESHIOConverter::ExternalConverter::MeshIo &&
+      !SMESH_Meshio::IsModernMeshioVersion())
+  {
+    program = "meshio-info";
   }
+
+  static const bool isInstalled =
+      IsAllowedFromEnvironment(converter) && checkExecutable(program);
+
+  return isInstalled;
 }
+
+
+/*!
+  Returns lib version string that has valid integer at least in the first position.
+*/
+QString SMESH_Meshio::GetConverterVersion(SMESHIOConverter::ExternalConverter converter)
+{
+  auto IsVersionStringValid = [](const QString& version) -> bool
+  {
+    if (version.isEmpty())
+    {
+      return false;
+    }
+
+    // Check if we have an integer at least at the first position
+    const QStringList curVersionNums = version.split('.');
+
+    bool ok;
+    const int firstNum = curVersionNums[0].toInt(&ok);
+    if (!ok)
+    {
+      ERROR_MESSAGE("Converter version value is not valid!");
+      return false;
+    }
+
+    MESSAGE("Converter version first number: " << firstNum);
+    return true;
+  };
+
+  auto GetConverterVersionFromEnv = [&](SMESHIOConverter::ExternalConverter conv) -> QString
+  {
+    // Build env var name: uppercase + "_VERSION"
+    std::string envName = SMESHIOConverter::toString(conv);
+    std::transform(envName.begin(), envName.end(), envName.begin(), ::toupper);
+    envName += "_VERSION";
+
+    // Read environment variable
+    const char* envVar = std::getenv(envName.c_str());
+
+    if (envVar && (envVar[0] != '\0'))
+    {
+      MESSAGE(envName << ": " << envVar);
+      return envVar;
+    }
+
+    MESSAGE("MESHIO_VERSION is not set!");
+    return {};
+  };
+
+  auto GetConverterVersionHelper = [&](SMESHIOConverter::ExternalConverter conv) -> QString
+  {
+    // Try environment variable first
+    const QString versionEnv = GetConverterVersionFromEnv(conv);
+    if (IsVersionStringValid(versionEnv))
+      return versionEnv;
+
+    // Special fallback for MeshIo: guess by Python version
+    if (conv == SMESHIOConverter::ExternalConverter::MeshIo)
+    {
+      const QString meshioVersionByPython = IsModernPythonVersion() ? "5" : "4";
+      MESSAGE("meshio version was defined by Python version: " << meshioVersionByPython.toStdString());
+      return meshioVersionByPython;
+    }
+
+    // For other converters, just return "unknown"
+    return "unknown";
+  };
+
+  static const QString converterVersion = GetConverterVersionHelper(converter);
+  return converterVersion;
+};
 

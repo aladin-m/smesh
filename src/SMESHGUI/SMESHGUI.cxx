@@ -403,7 +403,7 @@ namespace
             }
           case SMESHOp::OpImportMESHIO:
             {
-              if (!SMESHGUI_Meshio::IsConvertLibInstalled(SMESH_Meshio::GetLibraryForExtension(selectedFilter)))
+              if (!SMESHGUI_Meshio::IsConverterInstalled(SMESH_Meshio::GetConverterForExtension(selectedFilter)))
                 return;
               aMeshes = SMESHGUI_Meshio::ImportMesh(theComponentMesh, filename, errors, selectedFilter);
               break;

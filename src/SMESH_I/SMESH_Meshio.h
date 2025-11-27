@@ -226,8 +226,10 @@ public:
   static bool IsModernMeshioVersion();
   static bool IsMeshioInstalled();
   static bool IsModernPythonVersion();
-  static bool IsConvertLibInstalled(SMESHIOConverter::ExternalConverter lib = SMESHIOConverter::ExternalConverter::Gmsh);
-  static SMESHIOConverter::ExternalConverter GetLibraryForExtension(const QString& selectedFilter);
+
+  static QString GetConverterVersion(SMESHIOConverter::ExternalConverter converter);
+  static bool IsConverterInstalled(SMESHIOConverter::ExternalConverter converter = SMESHIOConverter::ExternalConverter::Gmsh);
+  static SMESHIOConverter::ExternalConverter GetConverterForExtension(const QString& selectedFilter);
   QString GetFilterLabel(QString filter) const;
   
 
