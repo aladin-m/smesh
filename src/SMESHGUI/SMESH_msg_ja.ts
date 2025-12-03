@@ -733,11 +733,11 @@
     </message>
     <message>
         <source>MEN_IMPORT_MESHIO</source>
-        <translation>他の形式... (meshio)</translation>
+        <translation>他の形式</translation>
     </message>
     <message>
         <source>MEN_EXPORT_MESHIO</source>
-        <translation>他の形式... (meshio)</translation>
+        <translation>他の形式</translation>
     </message>
     <message>
       <source>MEN_MERGE</source>

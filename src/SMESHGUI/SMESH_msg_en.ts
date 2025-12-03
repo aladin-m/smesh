@@ -906,11 +906,11 @@
     </message>
     <message>
         <source>MEN_IMPORT_MESHIO</source>
-        <translation>other formats... (meshio)</translation>
+        <translation>other formats</translation>
     </message>
     <message>
         <source>MEN_EXPORT_MESHIO</source>
-        <translation>other formats... (meshio)</translation>
+        <translation>other formats</translation>
     </message>
     <message>
         <source>MEN_MERGE</source>

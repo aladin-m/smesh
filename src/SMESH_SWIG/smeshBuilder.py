@@ -770,7 +770,7 @@ class smeshBuilder( SMESH._objref_SMESH_Gen, object ):
                 :class:`SMESH.DriverMED_ReadStatus` )
         """
 
-        aSmeshMeshes, aStatus = SMESH._objref_SMESH_Gen.CreateMeshesFromMESHIO(self, theFileName)
+        aSmeshMeshes, aStatus = SMESH._objref_SMESH_Gen.CreateMeshesFromMESHIO(self, theFileName, "")
         aMeshes = [ Mesh(self, self.geompyD, m) for m in aSmeshMeshes ]
         return aMeshes, aStatus
 

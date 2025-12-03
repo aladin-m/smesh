@@ -902,11 +902,11 @@
     </message>
     <message>
         <source>MEN_IMPORT_MESHIO</source>
-        <translation>autres formats... (meshio)</translation>
+        <translation>autres formats</translation>
     </message>
     <message>
         <source>MEN_EXPORT_MESHIO</source>
-        <translation>autres formats... (meshio)</translation>
+        <translation>autres formats</translation>
     </message>
     <message>
         <source>MEN_MERGE</source>
