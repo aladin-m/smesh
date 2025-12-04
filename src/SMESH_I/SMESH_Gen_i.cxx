@@ -2241,7 +2241,7 @@ SMESH::mesh_array* SMESH_Gen_i::CreateMeshesFromMESHIO(const char* theFileName,
       aStudyBuilder->CommitCommand();
 
     // Python dump
-    const std::string functionName = std::string(".CreateMeshesFromMESHIO(r'") + theFileName + "')";
+    const std::string functionName = std::string(".CreateMeshesFromMESHIO(r'") + theFileName + "', \"" + selectedFilter + "\")";
     functionToPythonDump(this, functionName, sobjects);
   }
 

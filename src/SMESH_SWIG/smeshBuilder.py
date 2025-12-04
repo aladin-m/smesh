@@ -761,7 +761,7 @@ class smeshBuilder( SMESH._objref_SMESH_Gen, object ):
         if error.comment: print("*** CreateMeshesFromGMF() errors:\n", error.comment)
         return Mesh(self, self.geompyD, aSmeshMesh), error
 
-    def CreateMeshesFromMESHIO(self, theFileName):
+    def CreateMeshesFromMESHIO(self, theFileName, selectedFilter = ""):
         """
         Create a Mesh object(s) importing data from from any file supported by meshio library.
 
@@ -770,7 +770,7 @@ class smeshBuilder( SMESH._objref_SMESH_Gen, object ):
                 :class:`SMESH.DriverMED_ReadStatus` )
         """
 
-        aSmeshMeshes, aStatus = SMESH._objref_SMESH_Gen.CreateMeshesFromMESHIO(self, theFileName, "")
+        aSmeshMeshes, aStatus = SMESH._objref_SMESH_Gen.CreateMeshesFromMESHIO(self, theFileName, selectedFilter)
         aMeshes = [ Mesh(self, self.geompyD, m) for m in aSmeshMeshes ]
         return aMeshes, aStatus
 

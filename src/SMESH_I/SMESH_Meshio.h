@@ -229,7 +229,7 @@ public:
 
   static QString GetConverterVersion(SMESHIOConverter::ExternalConverter converter);
   static bool IsConverterInstalled(SMESHIOConverter::ExternalConverter converter = SMESHIOConverter::ExternalConverter::Gmsh);
-  static SMESHIOConverter::ExternalConverter GetConverterForExtension(const QString& selectedFilter);
+  static SMESHIOConverter::ExternalConverter GetConverterForExtension(const QString& selectedFilter,  const QString& sourceFileName = QString());
   QString GetFilterLabel(QString filter) const;
   
 

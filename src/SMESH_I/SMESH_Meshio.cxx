@@ -471,22 +471,35 @@ QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter conv
 /*!
   find library for extension
 */
-SMESHIOConverter::ExternalConverter SMESH_Meshio::GetConverterForExtension(const QString& selectedFilter)
+SMESHIOConverter::ExternalConverter SMESH_Meshio::GetConverterForExtension(const QString& selectedFilter, const QString& sourceFileName)
 {
-    if (selectedFilter.isEmpty())
-        return SMESHIOConverter::ExternalConverter::Unknown;
-
-    for (const auto& [fmt, info] : SMESHIOConverter::ExtensionMap)
+    if (!selectedFilter.isEmpty())
     {
+      for (const auto& [fmt, info] : SMESHIOConverter::ExtensionMap)
+      {
         // Compare against the full label
         if (info.label.compare(selectedFilter, Qt::CaseInsensitive) == 0)
         {
-            // If multiple converters exist, return the first one
-            if (!info.converters.empty())
-                return info.converters.begin()->first;
+          // If multiple converters exist, return the first one
+          if (!info.converters.empty())
+            return info.converters.begin()->first;
         }
+      }
     }
 
+    if (!sourceFileName.isEmpty()){
+      const QString ext = QFileInfo(sourceFileName).suffix().toLower();
+      for (const auto& [fmt, info] : SMESHIOConverter::ExtensionMap)
+      {
+        if (info.extension.compare(ext, Qt::CaseInsensitive) == 0)
+        {
+          // If multiple converters exist, return the first one
+          if (!info.converters.empty())
+            return info.converters.begin()->first;
+        }
+      }
+    }
+      
     return SMESHIOConverter::ExternalConverter::Unknown;
 }
 
