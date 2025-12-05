@@ -75,7 +75,7 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
           parts << opt << val;
   };
   // Execute meshio convert command
-  SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetConverterForExtension(mySelectedFilter);
+  SMESHIOConverter::ExternalConverter convertLib = SMESH_Meshio::GetConverterForExtension(mySelectedFilter, sourceFileName);
   QString cmdExecutable;
   QString cmdConvertOpt = "";
   QString cmdInputOpt   = "";
