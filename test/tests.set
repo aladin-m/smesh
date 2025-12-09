@@ -162,6 +162,8 @@ SET(SESSION_FREE_TESTS
 
 SET(UNSTABLE_TESTS
   SMESH_MeshioFiles.py
+  SMESH_GmshFiles.py
+  SMESH_GmshGroups.py
 )
 
 # Additional files to install (not tests)

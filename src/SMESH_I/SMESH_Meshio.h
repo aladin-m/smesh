@@ -140,18 +140,18 @@ namespace SMESHIOConverter {
 
         // MeshIo-specific formats
         { Extension::Ansys,     { "ANSYS msh (*.msh)",            "ansys",        { {ExternalConverter::MeshIo, "ansys"} } } },
-        { Extension::AvsUcd,    { "AVS-UCD (*.avs)",              "avs",          { {ExternalConverter::MeshIo, "avs"} } } },
-        { Extension::DolfinXml, { "DOLFIN XML (*.xml)",           "xml",          { {ExternalConverter::MeshIo, "xml"} } } },
-        { Extension::Exodus,    { "Exodus (*.e *.exo)",           "exo",          { {ExternalConverter::MeshIo, "exo"} } } },
-        { Extension::Flac3d,    { "FLAC3D (*.f3grid)",            "f3grid",       { {ExternalConverter::MeshIo, "f3grid"} } } },
+        { Extension::AvsUcd,    { "AVS-UCD (*.avs)",              "avs",          { {ExternalConverter::MeshIo, "avsucd"} } } },
+        { Extension::DolfinXml, { "DOLFIN XML (*.xml)",           "xml",          { {ExternalConverter::MeshIo, "dolfin-xml"} } } },
+        { Extension::Exodus,    { "Exodus (*.e *.exo)",           "exo",          { {ExternalConverter::MeshIo, "exodus"} } } },
+        { Extension::Flac3d,    { "FLAC3D (*.f3grid)",            "f3grid",       { {ExternalConverter::MeshIo, "flac3d"} } } },
         { Extension::H5m,       { "H5M (*.h5m)",                  "h5m",          { {ExternalConverter::MeshIo, "h5m"} } } },
         { Extension::Kratos,    { "Kratos/MDPA (*.mdpa)",         "mdpa",         { {ExternalConverter::MeshIo, "mdpa"} } } },
-        { Extension::MeditMeshb,{ "Medit MESHB (*.meshb)",        "meshb",        { {ExternalConverter::MeshIo, "meshb"} } } },
-        { Extension::NastranFem,{ "Nastran (*.fem *.nas)",        "nas",          { {ExternalConverter::MeshIo, "nas"} } } },
-        { Extension::Netgen,    { "Netgen (*.vol *.vol.gz)",      "vol",          { {ExternalConverter::MeshIo, "vol"} } } },
-        { Extension::Permas,    { "PERMAS (*.post *.dato)",       "post",         { {ExternalConverter::MeshIo, "post"} } } },
+        { Extension::MeditMeshb,{ "Medit MESHB (*.meshb)",        "meshb",        { {ExternalConverter::MeshIo, "medit"} } } },
+        { Extension::NastranFem,{ "Nastran (*.fem *.nas)",        "nas",          { {ExternalConverter::MeshIo, "nastran"} } } },
+        { Extension::Netgen,    { "Netgen (*.vol *.vol.gz)",      "vol",          { {ExternalConverter::MeshIo, "netgen"} } } },
+        { Extension::Permas,    { "PERMAS (*.post *.dato)",       "post",         { {ExternalConverter::MeshIo, "permas"} } } },
         { Extension::Svg,       { "SVG, 2D output only (*.svg)",  "svg",          { {ExternalConverter::MeshIo, "svg"} } } },
-        { Extension::Tetgen,    { "TetGen (*.node *.ele)",        "node",         { {ExternalConverter::MeshIo, "node"} } } },
+        { Extension::Tetgen,    { "TetGen (*.node *.ele)",        "node",         { {ExternalConverter::MeshIo, "tetgen"} } } },
         { Extension::Ugrid,     { "UGRID (*.ugrid)",              "ugrid",        { {ExternalConverter::MeshIo, "ugrid"} } } },
         { Extension::Vtu,       { "VTU (*.vtu)",                  "vtu",          { {ExternalConverter::MeshIo, "vtu"} } } },
         { Extension::Wkt,       { "WKT, TIN (*.wkt)",             "wkt",          { {ExternalConverter::MeshIo, "wkt"} } } },
@@ -239,7 +239,7 @@ private:
   void RemoveErrorFile();
   std::string ReadErrorsFromFile() const;
 
-  QString GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib) const;
+  QString GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib, const QString& sourceFileName = QString()) const;
   
 
 private:

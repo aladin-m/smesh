@@ -84,7 +84,7 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
   QString cmdSaveOpts   = "";
   QString inputFmt  = "";
   QString outputFmt = "";
-
+  
   switch (convertLib)
   {
     case SMESHIOConverter::ExternalConverter::Gmsh:
@@ -109,12 +109,13 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
   // Decide input/output formats based on import/export
   if (isImport) {
       // Import case → output format is always "med"
-      inputFmt = GetConvertOptArgs(convertLib); // detect actual input format
+      inputFmt = GetConvertOptArgs(convertLib, sourceFileName); // detect actual input format
       outputFmt = "med";
   } else {
       // Export case → input format is always "med"
       inputFmt = "med";
-      outputFmt = GetConvertOptArgs(convertLib); // detect actual output format
+      outputFmt = GetConvertOptArgs(convertLib, sourceFileName); // detect actual output format
+
   }
 
   // Build command parts
@@ -148,7 +149,6 @@ void SMESH_Meshio::Convert(const QString& sourceFileName, const QString& targetF
   cmdParts << "2>" << myErrorFileName;
 
   const std::string cmd = cmdParts.join(" ").toStdString();
-
   MESSAGE("Call system(\"" << cmd << "\") ...");
 
   const int status = system(cmd.c_str());
@@ -441,20 +441,36 @@ QString SMESH_Meshio::GetFilterLabel(QString filter) const
 /*!
   Get optional arguments for meshio convert command
 */
-QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib) const
+QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter convertLib, const QString& fileName) const
 {
-    if (mySelectedFilter.isEmpty())
-        return {};
+    SMESHIOConverter::Extension fmt = SMESHIOConverter::Extension::Unknown;
+    if (!mySelectedFilter.isEmpty())
+    {
+      fmt = SMESHIOConverter::fromLabel(mySelectedFilter);
+    }
 
-    // Convertir le filtre sélectionné en enum Extension
-    SMESHIOConverter::Extension fmt = SMESHIOConverter::fromLabel(mySelectedFilter);
+    if (fmt == SMESHIOConverter::Extension::Unknown && !fileName.isEmpty())
+    {
+      const QString ext = QFileInfo(fileName).suffix().toLower();
+      for (const auto& [f, info] : SMESHIOConverter::ExtensionMap)
+      {
+        if (info.extension.compare(ext, Qt::CaseInsensitive) == 0)
+        {
+          fmt = f;
+          break;
+        }
+      }
+    }
+
     if (fmt == SMESHIOConverter::Extension::Unknown)
-        return {};
-
+    {
+      return "";
+    }
+    
     // Chercher les infos du format
     auto itFmt = SMESHIOConverter::ExtensionMap.find(fmt);
     if (itFmt == SMESHIOConverter::ExtensionMap.end())
-        return {};
+        return "";
 
     const auto& info = itFmt->second;
 
@@ -463,7 +479,7 @@ QString SMESH_Meshio::GetConvertOptArgs(SMESHIOConverter::ExternalConverter conv
     if (convIt != info.converters.end())
         return convIt->second;
 
-    return {};
+    return "";
 }
 
 
