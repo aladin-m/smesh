@@ -761,7 +761,7 @@ class smeshBuilder( SMESH._objref_SMESH_Gen, object ):
         if error.comment: print("*** CreateMeshesFromGMF() errors:\n", error.comment)
         return Mesh(self, self.geompyD, aSmeshMesh), error
 
-    def CreateMeshesFromMESHIO(self, theFileName, selectedFilter = ""):
+    def CreateMeshesFromMESHIO(self, theFileName, selectedFilter = ''):
         """
         Create a Mesh object(s) importing data from from any file supported by meshio library.
 

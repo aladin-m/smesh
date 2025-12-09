@@ -276,8 +276,6 @@ namespace
       filter.append( QObject::tr( "GMF_BINARY_FILES_FILTER") + " (*.meshb)" );
     }
     else if (theCommandID == SMESHOp::OpImportMESHIO) {
-      // if (!SMESHGUI_Meshio::IsMeshioInstalled())
-      //   return;
 
       filter = SMESHGUI_Meshio::GetImportFileFilter();
     }

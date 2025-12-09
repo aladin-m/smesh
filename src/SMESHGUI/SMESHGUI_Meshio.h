@@ -41,7 +41,6 @@
 
 class QStringList;
 
-
 class SMESHGUI_EXPORT SMESHGUI_Meshio
 {
   using meshList = QList<QPair<SMESH::SMESH_IDSource_var, QString>>;

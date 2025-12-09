@@ -116,13 +116,13 @@ namespace SMESHIOConverter {
     */
     static const std::map<Extension, ExtensionInfo> ExtensionMap = {
         // Gmsh-specific formats
+        { Extension::Gmsh40,    { "Gmsh 4.0 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh40"}, {ExternalConverter::MeshIo, "gmsh40"} } } },
+        { Extension::Gmsh41,    { "Gmsh 4.1 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh41"}, {ExternalConverter::MeshIo, "gmsh"} } } },
         { Extension::Gmsh1,     { "Gmsh 1 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh1"}, {ExternalConverter::MeshIo, "gmsh1"} } } },
         { Extension::Gmsh2,     { "Gmsh 2 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh2"}, {ExternalConverter::MeshIo, "gmsh22"} } } },
         { Extension::Gmsh22,    { "Gmsh 2.2 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh22"} } } },
         { Extension::Gmsh3,     { "Gmsh 3 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh3"} } } },
         { Extension::Gmsh4,     { "Gmsh 4 (*.msh)",               "msh",          { {ExternalConverter::Gmsh, "msh4"} } } },
-        { Extension::Gmsh40,    { "Gmsh 4.0 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh40"}, {ExternalConverter::MeshIo, "gmsh40"} } } },
-        { Extension::Gmsh41,    { "Gmsh 4.1 (*.msh)",             "msh",          { {ExternalConverter::Gmsh, "msh41"}, {ExternalConverter::MeshIo, "gmsh"} } } },
 
         { Extension::Mail,      { "MAIL (*.mail)",                "mail",         { {ExternalConverter::Gmsh, "mail"} } } },
         { Extension::Abaqus,    { "Abaqus (*.inp)",               "inp",          { {ExternalConverter::Gmsh, "inp"} } } },

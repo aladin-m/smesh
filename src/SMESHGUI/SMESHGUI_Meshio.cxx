@@ -25,6 +25,7 @@
 // Author : Konstantin Leontev, Open CASCADE S.A.S.
 //
 #include "SMESHGUI_Meshio.h"
+#include "SMESH_Meshio.h"
 
 // SMESH includes
 #include "SMESHGUI.h"
